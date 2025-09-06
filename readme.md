@@ -18,7 +18,7 @@ when project start {
 see it much cleaner than the first code? thats the purpose of relief.
 ## this project is currently in development.
 this project is currently in development and still havent finished yet. someday it will or be discontinued.\
-if youre willing to contribute this repo then contributing is welcome, but here are some **exceptions:**
+if youre willing to contribute this repo then contributing is welcome, but here are some **notes:**
 - fork the repo and make your changes in it, unless youre the contributor of this repo
 - write clear, concise commit messages or ill commit die (jk ill just probably squinting my eyes on this)
 - make sure your code works, and does not break existing functionality. i may/may not be mad
