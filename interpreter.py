@@ -1,6 +1,9 @@
+# relief interpreter
+
 #!/usr/bin/env python3
 import sys
 import re
+import time
 
 env = {}
 
@@ -23,7 +26,7 @@ def eval_expr(expr: str):
 
         return eval(expr)
     except Exception as e:
-        print(f"ERROR: you messed up '{expr}' and life now gives you {e}")
+        print(f"ERROR: {e} from '{expr}'")
         return None
 
 def run_relief(code: str):
@@ -41,18 +44,35 @@ def run_relief(code: str):
             i += 1
             continue
 
-        # stop() command
+        # stop()
         if line.startswith("stop()"):
             raise StopExe()
 
-        # assignment
+        # wait.time()
+        elif line.startswith("wait."):
+            m = re.match(r"wait\.(\w+)\((\d+)\)", line)
+            if m:
+                unit, value = m.groups()
+                value = int(value)
+                if unit == "milsec":
+                    time.sleep(value / 1000.0)
+                elif unit == "sec":
+                    time.sleep(value)
+                elif unit == "min":
+                    time.sleep(value * 60)
+                elif unit == "hrs":
+                    time.sleep(value * 3600)
+                else:
+                    print(f"ERROR: unknown '{unit}'")
+
+        # var = expr
         elif "=" in line and not line.startswith("if"):
             var, val = line.split("=", 1)
             var = var.strip()
             val = eval_expr(val)
             env[var] = val
 
-        # out command
+        # out
         elif line.startswith("out"):
             m = re.match(r"out\s*\(\s*(.*)\s*\)", line)
             if m:
@@ -61,7 +81,7 @@ def run_relief(code: str):
                 if result is not None:
                     print(result)
 
-        # rep loop
+        # rep
         elif line.startswith("rep"):
             times = re.search(r"rep\s+(\d+)\s*{", line)
             if times:
@@ -74,7 +94,7 @@ def run_relief(code: str):
                 for _ in range(count):
                     run_relief("when project start { " + "\n".join(block) + " }")
 
-        # if statement
+        # if
         elif line.startswith("if"):
             cond = re.search(r"if\s*\((.*)\)\s*{", line).group(1)
             condition_result = eval_expr(cond)
