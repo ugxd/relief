@@ -93,18 +93,24 @@ def run_relief(code: str):
                     i += 1
                 for _ in range(count):
                     run_relief("when project start { " + "\n".join(block) + " }")
+            else:
+                print(f"ERROR: invalid rep syntax in line {line}")
 
         # if
         elif line.startswith("if"):
-            cond = re.search(r"if\s*\((.*)\)\s*{", line).group(1)
-            condition_result = eval_expr(cond)
-            block = []
-            i += 1
-            while i < len(body) and "}" not in body[i]:
-                block.append(body[i])
+            m = re.search(r"if\s*\((.*)\)\s*{", line)
+            if m:
+                cond = m.group(1)
+                condition_result = eval_expr(cond)
+                block = []
                 i += 1
-            if condition_result:
-                run_relief("when project start { " + "\n".join(block) + " }")
+                while i < len(body) and "}" not in body[i]:
+                    block.append(body[i])
+                    i += 1
+                if condition_result:
+                    run_relief("when project start { " + "\n".join(block) + " }")
+            else:
+                print(f"ERROR: invalid if syntax in line: {line}")
 
         i += 1
 
