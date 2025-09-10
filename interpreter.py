@@ -15,16 +15,34 @@ def eval_expr(expr: str):
     """evaluate math/variables or return string in relief code"""
     expr = expr.strip()
     try:
-        # handle string assignment
+        # handle string literals
         if (expr.startswith('"') and expr.endswith('"')) or (expr.startswith("'") and expr.endswith("'")):
             return expr[1:-1]
 
-        # replace variable names with values from env
-        for var, val in env.items():
-            # whole word replacement
-            expr = re.sub(rf'\b{var}\b', str(val), expr)
+        # handle input function
+        m = re.match(r'in\s*\(\s*"(.*)"\s*\)', expr)
+        if m:
+            prompt = m.group(1)
+            return input(prompt + " ")
 
-        return eval(expr)
+        # replace variable names with values from env
+        def replacer(match):
+            var = match.group(0)
+            if var in env:
+                val = env[var]
+                if isinstance(val, str):
+                    return f'"{val}"'
+                else:
+                    return str(val)
+            return var
+
+        expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replacer, expr)
+
+        # safe eval with auto string conversion
+        result = eval(expr)
+
+        # if result is not str but part of a string concat → force str
+        return result
     except Exception as e:
         print(f"ERROR: {e} from '{expr}'")
         return None
@@ -81,6 +99,14 @@ def run_relief(code: str):
                 if result is not None:
                     print(result)
 
+        # in
+        elif line.startswith("in"):
+            m = re.match(r'in\s*\(\s*"(.*)"\s*\)', line)
+            if m:
+                prompt = m.group(1)
+                user_input = input(prompt + " ")
+                env["_last_input"] = user_input  # optional storage
+
         # rep
         elif line.startswith("rep"):
             times = re.search(r"rep\s+(\d+)\s*{", line)
@@ -110,7 +136,7 @@ def run_relief(code: str):
                 if condition_result:
                     run_relief("when project start { " + "\n".join(block) + " }")
             else:
-                print(f"ERROR: invalid if syntax in line: {line}")
+                print(f"ERROR: invalid if syntax in line {line}")
 
         i += 1
 
