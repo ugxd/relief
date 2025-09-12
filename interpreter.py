@@ -1,4 +1,4 @@
-# relief interpreter
+# relief interpreter made in python
 
 #!/usr/bin/env python3
 import sys
@@ -83,10 +83,17 @@ def run_relief(code: str):
                 else:
                     print(f"ERROR: unknown '{unit}'")
 
-        # var = expr
+        # ensure variable names are valid identifiers
         elif "=" in line and not line.startswith("if"):
             var, val = line.split("=", 1)
             var = var.strip()
+
+            # check if the variable name is valid
+            if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', var):
+                print(f"ERROR: invalid variable name '{var}'")
+                i += 1
+                continue
+
             val = eval_expr(val)
             env[var] = val
 
@@ -122,7 +129,7 @@ def run_relief(code: str):
             else:
                 print(f"ERROR: invalid rep syntax in line {line}")
 
-        # if
+        # if-else and if-else if
         elif line.startswith("if"):
             m = re.search(r"if\s*\((.*)\)\s*{", line)
             if m:
@@ -133,8 +140,43 @@ def run_relief(code: str):
                 while i < len(body) and "}" not in body[i]:
                     block.append(body[i])
                     i += 1
+
                 if condition_result:
                     run_relief("when project start { " + "\n".join(block) + " }")
+                else:
+                    # check for else if or else
+                    i += 1
+                    while i < len(body):
+                        next_line = body[i].strip()
+
+                        # else if
+                        if next_line.startswith("else if"):
+                            m = re.search(r"else if\s*\((.*)\)\s*{", next_line)
+                            if m:
+                                cond = m.group(1)
+                                condition_result = eval_expr(cond)
+                                block = []
+                                i += 1
+                                while i < len(body) and "}" not in body[i]:
+                                    block.append(body[i])
+                                    i += 1
+
+                                if condition_result:
+                                    run_relief("when project start { " + "\n".join(block) + " }")
+                                    break
+
+                        # else
+                        elif next_line.startswith("else"):
+                            block = []
+                            i += 1
+                            while i < len(body) and "}" not in body[i]:
+                                block.append(body[i])
+                                i += 1
+
+                            run_relief("when project start { " + "\n".join(block) + " }")
+                            break
+
+                        i += 1
             else:
                 print(f"ERROR: invalid if syntax in line {line}")
 
@@ -142,7 +184,7 @@ def run_relief(code: str):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("USAGE: python interpreter.py YOUR_PROJECT_HERE.relief")
+        print("USAGE: relief YOUR_PROJECT_HERE.relief")
         sys.exit(1)
 
     filename = sys.argv[1]
