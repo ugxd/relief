@@ -4,6 +4,7 @@
 import sys
 import re
 import time
+import math
 
 env = {}
 
@@ -11,6 +12,7 @@ env = {}
 class StopExe(Exception):
     pass
 
+# extend eval_expr to handle math functions
 def eval_expr(expr: str):
     """evaluate math/variables or return string in relief code"""
     expr = expr.strip()
@@ -37,6 +39,19 @@ def eval_expr(expr: str):
             return var
 
         expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replacer, expr)
+
+        # replace math-like syntax with py equivalents
+        expr = expr.replace("sqrt", "math.sqrt")
+        expr = expr.replace("cbrt", "math.pow")  # cbrt(x) -> math.pow(x, 1/3)
+        expr = expr.replace("pow", "math.pow")
+        expr = expr.replace("abs", "abs")
+        expr = expr.replace("fabs", "math.fabs")
+        expr = expr.replace("rup", "math.ceil")
+        expr = expr.replace("rdown", "math.floor")
+
+        # special handling for cbrt
+        if "math.pow" in expr and ", 1/3" in expr:
+            expr = expr.replace(", 1/3", ", 1.0/3.0")
 
         # safe eval with auto string conversion
         result = eval(expr)
