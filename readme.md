@@ -31,3 +31,7 @@ if youre willing to contribute this repo then contributing is welcome, but here 
 if you violate any of these purposely, im kidnapping you 24/7
 
 if you contributed this, no matter small or big, every little helps. tysm for helping relief better </3
+
+
+
+½	☒╟� Ř§Ů'╟ ‡я√ðsžšåÞя舐©—Ř§Ů????½	Ř§Ů½	æØ¢Ã ╟óÞ¢áñ 舐•Ř§Ů©—舐½	¶舐
