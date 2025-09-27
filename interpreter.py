@@ -1,5 +1,3 @@
-# relief interpreter made in python
-
 #!/usr/bin/env python3
 import sys
 import re
@@ -8,26 +6,20 @@ import math
 
 env = {}
 
-# custom exception to stop execution
 class StopExe(Exception):
     pass
 
-# extend eval_expr to handle math functions
 def eval_expr(expr: str):
-    """evaluate math/variables or return string in relief code"""
     expr = expr.strip()
     try:
-        # handle string literals
         if (expr.startswith('"') and expr.endswith('"')) or (expr.startswith("'") and expr.endswith("'")):
             return expr[1:-1]
 
-        # handle input function
         m = re.match(r'in\s*\(\s*"(.*)"\s*\)', expr)
         if m:
             prompt = m.group(1)
             return input(prompt + " ")
 
-        # replace variable names with values from env
         def replacer(match):
             var = match.group(0)
             if var in env:
@@ -39,24 +31,18 @@ def eval_expr(expr: str):
             return var
 
         expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replacer, expr)
-
-        # replace math-like syntax with py equivalents
         expr = expr.replace("sqrt", "math.sqrt")
-        expr = expr.replace("cbrt", "math.pow")  # cbrt(x) -> math.pow(x, 1/3)
+        expr = expr.replace("cbrt", "math.pow")
         expr = expr.replace("pow", "math.pow")
         expr = expr.replace("abs", "abs")
         expr = expr.replace("fabs", "math.fabs")
         expr = expr.replace("rup", "math.ceil")
         expr = expr.replace("rdown", "math.floor")
 
-        # special handling for cbrt
         if "math.pow" in expr and ", 1/3" in expr:
             expr = expr.replace(", 1/3", ", 1.0/3.0")
 
-        # safe eval with auto string conversion
         result = eval(expr)
-
-        # if result is not str but part of a string concat → force str
         return result
     except Exception as e:
         print(f"ERROR: {e} from '{expr}'")
@@ -77,11 +63,9 @@ def run_relief(code: str):
             i += 1
             continue
 
-        # stop()
         if line.startswith("stop()"):
             raise StopExe()
 
-        # wait.time()
         elif line.startswith("wait."):
             m = re.match(r"wait\.(\w+)\((\d+)\)", line)
             if m:
@@ -98,12 +82,10 @@ def run_relief(code: str):
                 else:
                     print(f"ERROR: unknown '{unit}'")
 
-        # ensure variable names are valid identifiers
         elif "=" in line and not line.startswith("if"):
             var, val = line.split("=", 1)
             var = var.strip()
 
-            # check if the variable name is valid
             if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', var):
                 print(f"ERROR: invalid variable name '{var}'")
                 i += 1
@@ -112,7 +94,6 @@ def run_relief(code: str):
             val = eval_expr(val)
             env[var] = val
 
-        # out
         elif line.startswith("out"):
             m = re.match(r"out\s*\(\s*(.*)\s*\)", line)
             if m:
@@ -121,15 +102,13 @@ def run_relief(code: str):
                 if result is not None:
                     print(result)
 
-        # in
         elif line.startswith("in"):
             m = re.match(r'in\s*\(\s*"(.*)"\s*\)', line)
             if m:
                 prompt = m.group(1)
                 user_input = input(prompt + " ")
-                env["_last_input"] = user_input  # optional storage
+                env["_last_input"] = user_input
 
-        # rep
         elif line.startswith("rep"):
             times = re.search(r"rep\s+(\d+)\s*{", line)
             if times:
@@ -144,7 +123,6 @@ def run_relief(code: str):
             else:
                 print(f"ERROR: invalid rep syntax in line {line}")
 
-        # if-else and if-else if
         elif line.startswith("if"):
             m = re.search(r"if\s*\((.*)\)\s*{", line)
             if m:
@@ -159,12 +137,10 @@ def run_relief(code: str):
                 if condition_result:
                     run_relief("when project start { " + "\n".join(block) + " }")
                 else:
-                    # check for else if or else
                     i += 1
                     while i < len(body):
                         next_line = body[i].strip()
 
-                        # else if
                         if next_line.startswith("else if"):
                             m = re.search(r"else if\s*\((.*)\)\s*{", next_line)
                             if m:
@@ -180,7 +156,6 @@ def run_relief(code: str):
                                     run_relief("when project start { " + "\n".join(block) + " }")
                                     break
 
-                        # else
                         elif next_line.startswith("else"):
                             block = []
                             i += 1
@@ -194,6 +169,27 @@ def run_relief(code: str):
                         i += 1
             else:
                 print(f"ERROR: invalid if syntax in line {line}")
+
+        elif line.startswith("defy"):
+            m = re.match(r"defy\s+(\w+)\s*\(\)\s*{", line)
+            if m:
+                func_name = m.group(1)
+                block = []
+                i += 1
+                while i < len(body) and "}" not in body[i]:
+                    block.append(body[i])
+                    i += 1
+                env[func_name] = block
+            else:
+                print(f"ERROR: invalid defy syntax in line {line}")
+
+        elif re.match(r"\w+\(\)", line):
+            func_name = line.split("(")[0].strip()
+            if func_name in env:
+                func_body = env[func_name]
+                run_relief("when project start { " + "\n".join(func_body) + " }")
+            else:
+                print(f"ERROR: undefined function '{func_name}'")
 
         i += 1
 
