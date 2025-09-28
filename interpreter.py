@@ -171,7 +171,7 @@ def run_relief(code: str):
                 print(f"ERROR: invalid if syntax in line {line}")
 
         elif line.startswith("defy"):
-            m = re.match(r"defy\s+(\w+)\s*\(\)\s*{", line)
+            m = re.match(r"defy\s*\(\s*(\w+)\s*\)\s*{", line)
             if m:
                 func_name = m.group(1)
                 block = []
