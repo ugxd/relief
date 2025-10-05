@@ -2,7 +2,6 @@
 import sys
 import re
 import time
-import math
 
 env = {}
 
@@ -31,19 +30,13 @@ def eval_expr(expr: str):
             return var
 
         expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replacer, expr)
-        expr = expr.replace("sqrt", "math.sqrt")
-        expr = expr.replace("cbrt", "math.pow")
-        expr = expr.replace("pow", "math.pow")
-        expr = expr.replace("abs", "abs")
-        expr = expr.replace("fabs", "math.fabs")
-        expr = expr.replace("rup", "math.ceil")
-        expr = expr.replace("rdown", "math.floor")
 
-        if "math.pow" in expr and ", 1/3" in expr:
-            expr = expr.replace(", 1/3", ", 1.0/3.0")
-
-        result = eval(expr)
-        return result
+        try:
+            result = eval(expr)
+            return result
+        except Exception as e:
+            print(f"ERROR: {e} from '{expr}'")
+            return None
     except Exception as e:
         print(f"ERROR: {e} from '{expr}'")
         return None
